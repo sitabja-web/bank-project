@@ -12,6 +12,7 @@ function connectToDB()  {
        .catch(err=>{
               console.log("error connecting to DB");
               process.exit(1)
+              // this stops the server if the database is not connected to the server
               
        })
 
