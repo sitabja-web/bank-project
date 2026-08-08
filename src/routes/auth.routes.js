@@ -1,11 +1,11 @@
-const express = reuqire("express")
+const express = require("express")
 const authController  = require("../controllers/auth.controller")
 
-const router = express.router()
+const router = express.Router()
 
 // api name => /api/auth/register
 
-router.post("/register"   , authController.userResgisterController)
+router.post("/register"   , authController.userRegisterController)
 
 
 module.exports  = router
