@@ -1,13 +1,12 @@
 const userModel = require("../models/user.model");
 const jwt = require("jsonwebtoken");
+const emailService = require("../services/email.services");
 
 // POST /api/auth/register
 async function userRegisterController(req, res) {
     const { email, name, password } = req.body;
 
-    const isExists = await userModel.findOne({
-        email: email
-    });
+    const isExists = await userModel.findOne({ email });
 
     if (isExists) {
         return res.status(422).json({
@@ -16,21 +15,32 @@ async function userRegisterController(req, res) {
         });
     }
 
+    // Create user
     const user = await userModel.create({
         email,
         password,
         name
     });
 
+    // Send registration email
+    await emailService.sendRegistrationEmail(
+        user.email,
+        user.name
+    );
+
+    // Create JWT token
     const token = jwt.sign(
         { userID: user._id },
         process.env.JWT_SECRET,
         { expiresIn: "3d" }
     );
 
+    // Store token in cookie
     res.cookie("token", token);
 
+    // Send response
     return res.status(201).json({
+        message: "Registration successful",
         user: {
             _id: user._id,
             email: user.email,
@@ -40,11 +50,12 @@ async function userRegisterController(req, res) {
     });
 }
 
-// POST /api/auth/login
 
+// POST /api/auth/login
 async function userLoginController(req, res) {
     const { email, password } = req.body;
 
+    // Find user and include password
     const user = await userModel
         .findOne({ email })
         .select("+password");
@@ -55,6 +66,7 @@ async function userLoginController(req, res) {
         });
     }
 
+    // Compare entered password
     const isValidPassword = await user.comparePassword(password);
 
     if (!isValidPassword) {
@@ -63,12 +75,14 @@ async function userLoginController(req, res) {
         });
     }
 
+    // Create JWT
     const token = jwt.sign(
         { userID: user._id },
         process.env.JWT_SECRET,
         { expiresIn: "3d" }
     );
 
+    // Store token in cookie
     res.cookie("token", token);
 
     return res.status(200).json({
